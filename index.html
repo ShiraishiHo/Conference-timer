@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- 引入专业七段码数字字体 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dseg@2.1.0/css/dseg.min.css">
+    <!-- 引入最经典的 Digital-7 电子表字体 -->
+    <link href="https://fonts.cdnfonts.com/css/digital-7-mono" rel="stylesheet">
     <title>学术会议倒计时</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -14,9 +14,8 @@
             height: 100%; 
             background-color: #000000; 
             color: #ffffff; 
-            /* 使用 DSEG7 经典斜体风格 */
-            font-family: 'DSEG7-Classic', sans-serif;
-            font-style: italic;
+            /* 使用标准的 Digital-7 字体 */
+            font-family: 'Digital-7 Mono', sans-serif;
             overflow: hidden;
             user-select: none;
         }
@@ -28,8 +27,7 @@
             align-items: center;
             justify-content: center;
             height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            font-style: normal;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         }
         .title {
             font-size: 14px;
@@ -50,7 +48,7 @@
             font-size: 60px;
             font-weight: bold;
             cursor: pointer;
-            font-family: 'DSEG7-Classic';
+            font-family: 'Digital-7 Mono';
         }
 
         #timer-screen {
@@ -68,7 +66,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 1vw; /* 增加数位间的间距，防止重叠感 */
+            /* 稍微倾斜，模拟电子表屏幕的视角感 */
+            transform: skewX(-5deg); 
         }
 
         /* 单个数位方格 */
@@ -76,13 +75,14 @@
             display: grid;
             place-items: center;
             position: relative;
-            width: 16vw; /* 稍微加宽 */
+            width: 15vw; /* 严格固定宽度 */
         }
 
         .colon-box {
             display: grid;
             place-items: center;
             width: 6vw;
+            margin-bottom: 2vw;
         }
 
         .sign-box {
@@ -93,52 +93,44 @@
 
         .digit-text {
             grid-area: 1 / 1;
-            font-size: 22vw;
+            font-size: 26vw; /* 调大字号 */
             line-height: 1;
             text-align: center;
         }
 
-        /* 极淡的液晶底纹 */
+        /* 极淡的液晶底纹：模拟未通电的 8 */
         .ghost {
-            color: rgba(255, 255, 255, 0.04);
+            color: rgba(255, 255, 255, 0.03);
             z-index: 1;
         }
 
-        /* 真实数字 */
+        /* 真实数字：模拟通电的发光段位 */
         .active {
             color: #ffffff;
             z-index: 2;
-            /* 增加轻微的外发光，提升清晰度 */
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-            transition: color 0.3s ease, text-shadow 0.3s ease;
+            /* 模拟液晶屏的轻微溢光 */
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            transition: color 0.3s ease;
         }
 
         #reset-btn {
             position: absolute;
-            bottom: 12%;
+            bottom: 10%;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            padding: 12px 40px;
-            border-radius: 4px;
-            font-size: 16px;
+            padding: 10px 30px;
+            border-radius: 2px;
+            font-size: 14px;
             font-family: -apple-system, sans-serif;
-            font-style: normal;
             letter-spacing: 4px;
             cursor: pointer;
             z-index: 10;
         }
 
-        /* 状态颜色：黄色 */
-        .warning .active { 
-            color: #facc15; 
-            text-shadow: 0 0 25px rgba(250, 204, 21, 0.4); 
-        }
-        /* 状态颜色：红色 */
-        .danger .active { 
-            color: #ef4444; 
-            text-shadow: 0 0 30px rgba(239, 68, 68, 0.5); 
-        }
+        /* 状态颜色：经典电子表警示色 */
+        .warning .active { color: #ffff00; text-shadow: 0 0 15px rgba(255, 255, 0, 0.4); }
+        .danger .active { color: #ff0000; text-shadow: 0 0 20px rgba(255, 0, 0, 0.5); }
         .dim { opacity: 0.3; }
         
         #status-bar {
@@ -151,7 +143,6 @@
             text-align: center;
             width: 100%;
             font-family: -apple-system, sans-serif;
-            font-style: normal;
         }
     </style>
 </head>
