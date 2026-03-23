@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- 引入最经典的 Digital-7 电子表字体 -->
     <link href="https://fonts.cdnfonts.com/css/digital-7-mono" rel="stylesheet">
     <title>学术会议倒计时</title>
     <style>
@@ -14,43 +13,96 @@
             height: 100%; 
             background-color: #000000; 
             color: #ffffff; 
-            /* 使用标准的 Digital-7 字体 */
             font-family: 'Digital-7 Mono', sans-serif;
             overflow: hidden;
             user-select: none;
         }
         
-        /* 设置界面使用系统字体，确保清晰 */
+        /* 设置界面样式 */
         #setup {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         }
-        .title {
-            font-size: 14px;
+        .setup-title {
+            font-family: -apple-system, sans-serif;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5em;
             opacity: 0.3;
-            margin-bottom: 50px;
-        }
-        .presets {
-            display: flex;
-            gap: 30px;
-            margin-bottom: 60px;
-        }
-        .btn {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 60px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: 'Digital-7 Mono';
+            margin-bottom: 30px;
         }
 
+        /* 手动调整区域 */
+        .adjuster-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+            transform: skewX(-5deg);
+        }
+        .adjuster-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .adj-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 60px;
+            height: 40px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .adj-btn:active { background: rgba(255, 255, 255, 0.3); }
+        
+        .setup-display {
+            font-size: 15vw;
+            line-height: 1;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .start-btn {
+            font-family: -apple-system, sans-serif;
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 15px 60px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            letter-spacing: 5px;
+            cursor: pointer;
+            margin-bottom: 40px;
+        }
+        .start-btn:active { opacity: 0.8; }
+
+        .presets {
+            display: flex;
+            gap: 20px;
+        }
+        .preset-btn {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.5);
+            padding: 8px 20px;
+            font-size: 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        /* 计时界面样式 */
         #timer-screen {
             display: none;
             height: 100%;
@@ -60,55 +112,39 @@
             justify-content: center;
             position: relative;
         }
-
-        /* 计时器总容器 */
         .display-wrapper {
             display: flex;
             align-items: center;
             justify-content: center;
-            /* 稍微倾斜，模拟电子表屏幕的视角感 */
             transform: skewX(-5deg); 
         }
-
-        /* 单个数位方格 */
         .digit-box {
             display: grid;
             place-items: center;
             position: relative;
-            width: 15vw; /* 严格固定宽度 */
+            width: 15vw;
         }
-
         .colon-box {
             display: grid;
             place-items: center;
             width: 6vw;
             margin-bottom: 2vw;
         }
-
         .sign-box {
             display: grid;
             place-items: center;
             width: 8vw;
         }
-
         .digit-text {
             grid-area: 1 / 1;
-            font-size: 26vw; /* 调大字号 */
+            font-size: 26vw;
             line-height: 1;
             text-align: center;
         }
-
-        /* 极淡的液晶底纹：模拟未通电的 8 */
-        .ghost {
-            color: rgba(255, 255, 255, 0.03);
-            z-index: 1;
-        }
-
-        /* 真实数字：模拟通电的发光段位 */
+        .ghost { color: rgba(255, 255, 255, 0.03); z-index: 1; }
         .active {
             color: #ffffff;
             z-index: 2;
-            /* 模拟液晶屏的轻微溢光 */
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
             transition: color 0.3s ease;
         }
@@ -128,7 +164,6 @@
             z-index: 10;
         }
 
-        /* 状态颜色：经典电子表警示色 */
         .warning .active { color: #ffff00; text-shadow: 0 0 15px rgba(255, 255, 0, 0.4); }
         .danger .active { color: #ff0000; text-shadow: 0 0 20px rgba(255, 0, 0, 0.5); }
         .dim { opacity: 0.3; }
@@ -148,53 +183,55 @@
 </head>
 <body onclick="handleUserInteraction()" ontouchstart="handleUserInteraction()">
 
+    <!-- 设置界面 -->
     <div id="setup">
-        <div class="title">Academic Timer</div>
-        <div class="presets">
-            <button class="btn" onclick="startTimer(5)">5</button>
-            <button class="btn" onclick="startTimer(10)">10</button>
-            <button class="btn" onclick="startTimer(15)">15</button>
-            <button class="btn" onclick="startTimer(20)">20</button>
+        <div class="setup-title">Set Timer Duration</div>
+        
+        <div class="adjuster-container">
+            <!-- 分钟调整 -->
+            <div class="adjuster-group">
+                <div class="adj-btn" onclick="adjTime(60)">+</div>
+                <div class="setup-display" id="setup-mins">10</div>
+                <div class="adj-btn" onclick="adjTime(-60)">-</div>
+            </div>
+            
+            <div class="setup-display">:</div>
+            
+            <!-- 秒钟调整 -->
+            <div class="adjuster-group">
+                <div class="adj-btn" onclick="adjTime(1)">+</div>
+                <div class="setup-display" id="setup-secs">00</div>
+                <div class="adj-btn" onclick="adjTime(-1)">-</div>
+            </div>
         </div>
-        <div id="status-bar">READY TO START</div>
+
+        <button class="start-btn" onclick="startTimer()">START</button>
+
+        <div class="presets">
+            <button class="preset-btn" onclick="setPreset(5)">5m</button>
+            <button class="preset-btn" onclick="setPreset(10)">10m</button>
+            <button class="preset-btn" onclick="setPreset(15)">15m</button>
+            <button class="preset-btn" onclick="setPreset(20)">20m</button>
+        </div>
+        
+        <div id="status-bar" style="position: relative; margin-top: 40px; bottom: auto;">READY TO CONFIGURE</div>
     </div>
 
+    <!-- 计时界面 -->
     <div id="timer-screen" onclick="togglePause()">
         <div class="display-wrapper" id="main-display">
-            <!-- 负号 -->
-            <div class="sign-box">
-                <div class="digit-text active" id="sign"></div>
-            </div>
-            <!-- 分钟十位 -->
-            <div class="digit-box">
-                <div class="digit-text ghost">8</div>
-                <div class="digit-text active" id="m1">0</div>
-            </div>
-            <!-- 分钟个位 -->
-            <div class="digit-box">
-                <div class="digit-text ghost">8</div>
-                <div class="digit-text active" id="m2">0</div>
-            </div>
-            <!-- 冒号 -->
-            <div class="colon-box">
-                <div class="digit-text ghost">:</div>
-                <div class="digit-text active">:</div>
-            </div>
-            <!-- 秒钟十位 -->
-            <div class="digit-box">
-                <div class="digit-text ghost">8</div>
-                <div class="digit-text active" id="s1">0</div>
-            </div>
-            <!-- 秒钟个位 -->
-            <div class="digit-box">
-                <div class="digit-text ghost">8</div>
-                <div class="digit-text active" id="s2">0</div>
-            </div>
+            <div class="sign-box"><div class="digit-text active" id="sign"></div></div>
+            <div class="digit-box"><div class="digit-text ghost">8</div><div class="digit-text active" id="m1">0</div></div>
+            <div class="digit-box"><div class="digit-text ghost">8</div><div class="digit-text active" id="m2">0</div></div>
+            <div class="colon-box"><div class="digit-text ghost">:</div><div class="digit-text active">:</div></div>
+            <div class="digit-box"><div class="digit-text ghost">8</div><div class="digit-text active" id="s1">0</div></div>
+            <div class="digit-box"><div class="digit-text ghost">8</div><div class="digit-text active" id="s2">0</div></div>
         </div>
         <button id="reset-btn" onclick="event.stopPropagation(); reset()">RESET</button>
     </div>
 
     <script>
+        let setupTime = 600; // 默认10分钟 (秒)
         let timeLeft = 0;
         let timerId = null;
         let isActive = false;
@@ -206,11 +243,34 @@
         const mainDisplay = document.getElementById('main-display');
         const statusBar = document.getElementById('status-bar');
 
+        const elMinsSetup = document.getElementById('setup-mins');
+        const elSecsSetup = document.getElementById('setup-secs');
+
         const elSign = document.getElementById('sign');
         const elM1 = document.getElementById('m1');
         const elM2 = document.getElementById('m2');
         const elS1 = document.getElementById('s1');
         const elS2 = document.getElementById('s2');
+
+        // 手动调整时间逻辑
+        function adjTime(delta) {
+            setupTime += delta;
+            if (setupTime < 1) setupTime = 1; // 最小1秒
+            if (setupTime > 5999) setupTime = 5999; // 最大99:59
+            updateSetupDisplay();
+        }
+
+        function setPreset(mins) {
+            setupTime = mins * 60;
+            updateSetupDisplay();
+        }
+
+        function updateSetupDisplay() {
+            const mins = Math.floor(setupTime / 60).toString().padStart(2, '0');
+            const secs = (setupTime % 60).toString().padStart(2, '0');
+            elMinsSetup.innerText = mins;
+            elSecsSetup.innerText = secs;
+        }
 
         function handleUserInteraction() {
             unlockAudio();
@@ -235,12 +295,6 @@
             }
         }
 
-        document.addEventListener('visibilitychange', async () => {
-            if (wakeLock !== null && document.visibilityState === 'visible' && isActive) {
-                requestWakeLock();
-            }
-        });
-
         function unlockAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -250,9 +304,9 @@
             }
         }
 
-        function startTimer(minutes) {
+        function startTimer() {
             isActive = true;
-            timeLeft = minutes * 60;
+            timeLeft = setupTime;
             setupScreen.style.display = 'none';
             timerScreen.style.display = 'flex';
             requestWakeLock();
@@ -274,13 +328,11 @@
             const absTime = Math.abs(timeLeft);
             const mins = Math.floor(absTime / 60).toString().padStart(2, '0');
             const secs = (absTime % 60).toString().padStart(2, '0');
-            
             elSign.innerText = timeLeft < 0 ? '-' : '';
-            elM1.innerText = mins[0];
-            elM2.innerText = mins[1];
-            elS1.innerText = secs[0];
-            elS2.innerText = secs[1];
-            
+            elM1.innerText = mins[0] || '0';
+            elM2.innerText = mins[1] || '0';
+            elS1.innerText = secs[0] || '0';
+            elS2.innerText = secs[1] || '0';
             mainDisplay.classList.remove('warning', 'danger');
             if (timeLeft < 0 || timeLeft <= 10) mainDisplay.classList.add('danger');
             else if (timeLeft <= 60) mainDisplay.classList.add('warning');
@@ -300,6 +352,7 @@
             setupScreen.style.display = 'flex';
             timerScreen.style.display = 'none';
             statusBar.innerText = "READY TO START";
+            updateSetupDisplay();
         }
 
         function playBell(count) {
@@ -325,6 +378,9 @@
             }
             for (let i = 0; i < count; i++) strike(i * 0.8);
         }
+        
+        // 初始化显示
+        updateSetupDisplay();
     </script>
 </body>
 </html>
