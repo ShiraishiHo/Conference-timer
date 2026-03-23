@@ -61,21 +61,17 @@
         .danger { color: #dc2626; }
         .dim { opacity: 0.4; }
         
-        /* 测试按钮 */
-        #test-sound {
+        #audio-status {
             position: absolute;
             bottom: 20px;
             font-size: 10px;
             opacity: 0.2;
-            background: none;
-            border: 1px solid white;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
     </style>
 </head>
-<body>
+<body onclick="unlockAudio()" ontouchstart="unlockAudio()">
 
     <div id="setup">
         <div class="title">Academic Timer</div>
@@ -85,7 +81,7 @@
             <button class="btn" onclick="startTimer(15)">15</button>
             <button class="btn" onclick="startTimer(20)">20</button>
         </div>
-        <button id="test-sound" onclick="playBeep(1)">测试铃声 (Test Sound)</button>
+        <div id="audio-status">点击屏幕激活铃声 (Tap to unlock Bell)</div>
     </div>
 
     <div id="timer-screen" onclick="togglePause()" ondblclick="reset()">
@@ -97,34 +93,29 @@
         let timerId = null;
         let isActive = false;
         let lastBeepedAt = null;
-        
-        // 关键：提前定义音频上下文
         let audioCtx = null;
 
         const setupScreen = document.getElementById('setup');
         const timerScreen = document.getElementById('timer-screen');
         const display = document.getElementById('display');
 
-        function initAudio() {
+        function unlockAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
-            // iOS 必须在用户点击时 resume
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
+            document.getElementById('audio-status').innerText = "铃声已就绪 (Bell Ready)";
         }
 
         function startTimer(minutes) {
-            initAudio(); // 用户点击数字时激活音频
-            
+            unlockAudio();
             timeLeft = minutes * 60;
             isActive = true;
             lastBeepedAt = null;
-            
             setupScreen.style.display = 'none';
             timerScreen.style.display = 'flex';
-            
             updateDisplay();
             if (timerId) clearInterval(timerId);
             timerId = setInterval(tick, 1000);
@@ -135,19 +126,13 @@
             if (timeLeft > 0) {
                 timeLeft--;
                 updateDisplay();
-                
-                // 提醒逻辑：3分钟响1声，1分钟响2声
-                if (timeLeft === 180 && lastBeepedAt !== 180) {
-                    playBeep(1);
-                    lastBeepedAt = 180;
-                } else if (timeLeft === 60 && lastBeepedAt !== 60) {
-                    playBeep(2);
-                    lastBeepedAt = 60;
-                }
+                // 3分钟响1声，1分钟响2声
+                if (timeLeft === 180 && lastBeepedAt !== 180) { playBell(1); lastBeepedAt = 180; }
+                else if (timeLeft === 60 && lastBeepedAt !== 60) { playBell(2); lastBeepedAt = 60; }
             } else {
                 clearInterval(timerId);
                 isActive = false;
-                playBeep(3); // 结束响3声
+                playBell(3); // 结束响3声
                 display.classList.add('dim');
             }
         }
@@ -162,7 +147,7 @@
         }
 
         function togglePause() {
-            initAudio(); // 暂停/继续时也尝试激活
+            unlockAudio();
             isActive = !isActive;
             display.classList.toggle('dim', !isActive);
         }
@@ -174,29 +159,43 @@
             timerScreen.style.display = 'none';
         }
 
-        function playBeep(count) {
-            initAudio();
-            if (!audioCtx) return;
+        // 模拟会议铃声 (Conference Bell Synthesis)
+        function playBell(count) {
+            if (!audioCtx) unlockAudio();
+            
+            function strike(timeOffset) {
+                const now = audioCtx.currentTime + timeOffset;
+                
+                // 铃声由多个不和谐的频率组成
+                // 基频 700Hz + 泛音
+                const frequencies = [700, 1050, 1470, 2100, 2800];
+                const gains = [0.4, 0.2, 0.15, 0.1, 0.05];
+                const decays = [1.5, 1.0, 0.8, 0.5, 0.3];
 
-            function makeNoise(timeOffset) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime + timeOffset);
-                
-                gain.gain.setValueAtTime(0, audioCtx.currentTime + timeOffset);
-                gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + timeOffset + 0.01);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + timeOffset + 0.3);
-                
-                osc.start(audioCtx.currentTime + timeOffset);
-                osc.stop(audioCtx.currentTime + timeOffset + 0.3);
+                frequencies.forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now);
+                    
+                    gainNode.gain.setValueAtTime(0, now);
+                    // 极快的攻击 (Attack)
+                    gainNode.gain.linearRampToValueAtTime(gains[i], now + 0.01);
+                    // 指数级衰减 (Decay)
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + decays[i]);
+                    
+                    osc.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    
+                    osc.start(now);
+                    osc.stop(now + decays[i] + 0.1);
+                });
             }
 
             for (let i = 0; i < count; i++) {
-                makeNoise(i * 0.4);
+                // 每次响铃间隔 0.8 秒，听起来更从容
+                strike(i * 0.8);
             }
         }
     </script>
