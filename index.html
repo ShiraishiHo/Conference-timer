@@ -48,16 +48,39 @@
             display: none;
             height: 100%;
             width: 100%;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            position: relative;
         }
         #display {
             font-size: 24vw;
             font-weight: bold;
             line-height: 1;
             transition: color 0.3s ease;
+            margin-bottom: 20px;
         }
+        /* 新增重置按钮样式 */
+        #reset-btn {
+            position: absolute;
+            bottom: 15%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 40px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-family: inherit;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        #reset-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0.95);
+        }
+
         .warning { color: #eab308; }
         .danger { color: #dc2626; }
         .dim { opacity: 0.4; }
@@ -84,11 +107,13 @@
             <button class="btn" onclick="startTimer(15)">15</button>
             <button class="btn" onclick="startTimer(20)">20</button>
         </div>
-        <div id="status-bar">点击屏幕激活 (Tap to Start)</div>
+        <div id="status-bar">点击数字开始计时</div>
     </div>
 
-    <div id="timer-screen" onclick="togglePause()" ondblclick="reset()">
+    <div id="timer-screen" onclick="togglePause()">
         <div id="display">00:00</div>
+        <!-- 显式的重置按钮 -->
+        <button id="reset-btn" onclick="event.stopPropagation(); reset()">RESET</button>
     </div>
 
     <script>
@@ -96,49 +121,36 @@
         let timerId = null;
         let isActive = false;
         let audioCtx = null;
-        let wakeLock = null; // 屏幕唤醒锁对象
+        let wakeLock = null;
 
         const setupScreen = document.getElementById('setup');
         const timerScreen = document.getElementById('timer-screen');
         const display = document.getElementById('display');
         const statusBar = document.getElementById('status-bar');
 
-        // 统一处理用户交互（激活音频和屏幕锁）
         function handleUserInteraction() {
             unlockAudio();
             if (isActive) requestWakeLock();
         }
 
-        // 申请屏幕常亮
         async function requestWakeLock() {
             if ('wakeLock' in navigator) {
                 try {
-                    if (wakeLock !== null) return; // 已经开启了
+                    if (wakeLock !== null) return;
                     wakeLock = await navigator.wakeLock.request('screen');
-                    console.log('Wake Lock is active');
                     statusBar.innerText = "铃声就绪 | 屏幕常亮已开启";
-                    
-                    // 监听锁被释放（例如用户手动切走了 App）
-                    wakeLock.addEventListener('release', () => {
-                        console.log('Wake Lock was released');
-                        wakeLock = null;
-                    });
-                } catch (err) {
-                    console.error(`${err.name}, ${err.message}`);
-                }
+                    wakeLock.addEventListener('release', () => { wakeLock = null; });
+                } catch (err) { console.error(err); }
             }
         }
 
-        // 释放屏幕常亮
         function releaseWakeLock() {
             if (wakeLock !== null) {
                 wakeLock.release();
                 wakeLock = null;
-                statusBar.innerText = "铃声就绪";
             }
         }
 
-        // 监听页面可见性变化（如果切回来，重新申请锁）
         document.addEventListener('visibilitychange', async () => {
             if (wakeLock !== null && document.visibilityState === 'visible' && isActive) {
                 requestWakeLock();
@@ -157,13 +169,10 @@
         function startTimer(minutes) {
             isActive = true;
             timeLeft = minutes * 60;
-            
             setupScreen.style.display = 'none';
             timerScreen.style.display = 'flex';
-            
-            requestWakeLock(); // 开始计时时申请常亮
+            requestWakeLock();
             updateDisplay();
-            
             if (timerId) clearInterval(timerId);
             timerId = setInterval(tick, 1000);
         }
@@ -172,7 +181,6 @@
             if (!isActive) return;
             timeLeft--;
             updateDisplay();
-
             if (timeLeft === 180) playBell(1);
             else if (timeLeft === 60) playBell(2);
             else if (timeLeft === 0) playBell(3);
@@ -184,7 +192,6 @@
             const secs = (absTime % 60).toString().padStart(2, '0');
             const sign = timeLeft < 0 ? '-' : '';
             display.innerText = `${sign}${mins}:${secs}`;
-            
             display.classList.remove('warning', 'danger');
             if (timeLeft < 0 || timeLeft <= 10) display.classList.add('danger');
             else if (timeLeft <= 60) display.classList.add('warning');
@@ -194,16 +201,16 @@
             isActive = !isActive;
             display.classList.toggle('dim', !isActive);
             if (isActive) requestWakeLock();
-            else releaseWakeLock(); // 暂停时允许屏幕休眠
+            else releaseWakeLock();
         }
 
         function reset() {
             clearInterval(timerId);
             isActive = false;
-            releaseWakeLock(); // 重置时允许屏幕休眠
+            releaseWakeLock();
             setupScreen.style.display = 'flex';
             timerScreen.style.display = 'none';
-            statusBar.innerText = "点击屏幕激活";
+            statusBar.innerText = "点击数字开始计时";
         }
 
         function playBell(count) {
@@ -213,7 +220,6 @@
                 const frequencies = [700, 1050, 1470, 2100, 2800];
                 const gains = [0.4, 0.2, 0.15, 0.1, 0.05];
                 const decays = [1.5, 1.0, 0.8, 0.5, 0.3];
-
                 frequencies.forEach((freq, i) => {
                     const osc = audioCtx.createOscillator();
                     const gainNode = audioCtx.createGain();
