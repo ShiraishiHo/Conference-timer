@@ -7,7 +7,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>学术会议倒计时</title>
     <style>
-        /* 极致极简主义样式 */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { 
             height: 100%; 
@@ -17,15 +16,12 @@
             overflow: hidden;
             user-select: none;
         }
-
-        /* 设置界面 */
         #setup {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100%;
-            transition: opacity 0.5s;
         }
         .title {
             font-size: 14px;
@@ -47,31 +43,7 @@
             font-weight: bold;
             cursor: pointer;
             font-family: inherit;
-            transition: transform 0.2s;
-            border-bottom: 2px solid transparent;
         }
-        .btn:active { transform: scale(0.9); }
-        
-        .custom-area {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            opacity: 0.2;
-        }
-        .custom-area:focus-within { opacity: 1; }
-        #custom-input {
-            background: none;
-            border: none;
-            border-bottom: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            width: 80px;
-            text-align: center;
-            font-size: 20px;
-            outline: none;
-            font-family: inherit;
-        }
-
-        /* 计时界面 */
         #timer-screen {
             display: none;
             height: 100%;
@@ -79,34 +51,32 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            position: relative;
         }
         #display {
             font-size: 28vw;
             font-weight: bold;
             line-height: 1;
-            letter-spacing: -0.05em;
-            transition: color 0.5s;
         }
-        .paused-msg {
-            position: absolute;
-            bottom: 40px;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1em;
-            opacity: 0.2;
-            display: none;
-        }
-
-        /* 颜色状态 */
-        .warning { color: #eab308; } /* 黄色 */
-        .danger { color: #dc2626; }  /* 红色 */
+        .warning { color: #eab308; }
+        .danger { color: #dc2626; }
         .dim { opacity: 0.4; }
+        
+        /* 测试按钮 */
+        #test-sound {
+            position: absolute;
+            bottom: 20px;
+            font-size: 10px;
+            opacity: 0.2;
+            background: none;
+            border: 1px solid white;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- 设置界面 -->
     <div id="setup">
         <div class="title">Academic Timer</div>
         <div class="presets">
@@ -115,16 +85,11 @@
             <button class="btn" onclick="startTimer(15)">15</button>
             <button class="btn" onclick="startTimer(20)">20</button>
         </div>
-        <div class="custom-area">
-            <input type="number" id="custom-input" placeholder="Custom">
-            <span style="font-size: 10px; text-transform: uppercase;">min</span>
-        </div>
+        <button id="test-sound" onclick="playBeep(1)">测试铃声 (Test Sound)</button>
     </div>
 
-    <!-- 计时界面 -->
     <div id="timer-screen" onclick="togglePause()" ondblclick="reset()">
         <div id="display">00:00</div>
-        <div id="paused-msg" class="paused-msg">Paused</div>
     </div>
 
     <script>
@@ -132,21 +97,27 @@
         let timerId = null;
         let isActive = false;
         let lastBeepedAt = null;
+        
+        // 关键：提前定义音频上下文
+        let audioCtx = null;
 
         const setupScreen = document.getElementById('setup');
         const timerScreen = document.getElementById('timer-screen');
         const display = document.getElementById('display');
-        const pausedMsg = document.getElementById('paused-msg');
-        const customInput = document.getElementById('custom-input');
 
-        // 监听自定义输入回车
-        customInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && customInput.value) {
-                startTimer(parseInt(customInput.value));
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
-        });
+            // iOS 必须在用户点击时 resume
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
 
         function startTimer(minutes) {
+            initAudio(); // 用户点击数字时激活音频
+            
             timeLeft = minutes * 60;
             isActive = true;
             lastBeepedAt = null;
@@ -155,27 +126,28 @@
             timerScreen.style.display = 'flex';
             
             updateDisplay();
-            
             if (timerId) clearInterval(timerId);
             timerId = setInterval(tick, 1000);
-
-            // 尝试进入全屏
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(() => {});
-            }
         }
 
         function tick() {
             if (!isActive) return;
-
             if (timeLeft > 0) {
                 timeLeft--;
                 updateDisplay();
-                checkAudioAlerts();
+                
+                // 提醒逻辑：3分钟响1声，1分钟响2声
+                if (timeLeft === 180 && lastBeepedAt !== 180) {
+                    playBeep(1);
+                    lastBeepedAt = 180;
+                } else if (timeLeft === 60 && lastBeepedAt !== 60) {
+                    playBeep(2);
+                    lastBeepedAt = 60;
+                }
             } else {
                 clearInterval(timerId);
                 isActive = false;
-                playBeep(3);
+                playBeep(3); // 结束响3声
                 display.classList.add('dim');
             }
         }
@@ -184,20 +156,15 @@
             const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
             const secs = (timeLeft % 60).toString().padStart(2, '0');
             display.innerText = `${mins}:${secs}`;
-
-            // 颜色警示
             display.classList.remove('warning', 'danger');
-            if (timeLeft <= 10) {
-                display.classList.add('danger');
-            } else if (timeLeft <= 60) {
-                display.classList.add('warning');
-            }
+            if (timeLeft <= 10) display.classList.add('danger');
+            else if (timeLeft <= 60) display.classList.add('warning');
         }
 
         function togglePause() {
+            initAudio(); // 暂停/继续时也尝试激活
             isActive = !isActive;
             display.classList.toggle('dim', !isActive);
-            pausedMsg.style.display = isActive ? 'none' : 'block';
         }
 
         function reset() {
@@ -205,45 +172,31 @@
             isActive = false;
             setupScreen.style.display = 'flex';
             timerScreen.style.display = 'none';
-            display.classList.remove('dim');
-            
-            if (document.fullscreenElement) {
-                document.exitFullscreen().catch(() => {});
-            }
         }
 
-        function checkAudioAlerts() {
-            if (timeLeft === 180 && lastBeepedAt !== 180) { // 3 min
-                playBeep(1);
-                lastBeepedAt = 180;
-            } else if (timeLeft === 60 && lastBeepedAt !== 60) { // 1 min
-                playBeep(2);
-                lastBeepedAt = 60;
-            }
-        }
-
-        // Web Audio API 生成声音
         function playBeep(count) {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
-            function beep(delay) {
-                setTimeout(() => {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-                    gain.gain.setValueAtTime(0, audioCtx.currentTime);
-                    gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.01);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 0.2);
-                }, delay);
+            initAudio();
+            if (!audioCtx) return;
+
+            function makeNoise(timeOffset) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime + timeOffset);
+                
+                gain.gain.setValueAtTime(0, audioCtx.currentTime + timeOffset);
+                gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + timeOffset + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + timeOffset + 0.3);
+                
+                osc.start(audioCtx.currentTime + timeOffset);
+                osc.stop(audioCtx.currentTime + timeOffset + 0.3);
             }
 
             for (let i = 0; i < count; i++) {
-                beep(i * 300);
+                makeNoise(i * 0.4);
             }
         }
     </script>
