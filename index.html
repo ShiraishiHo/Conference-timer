@@ -56,53 +56,50 @@
             position: relative;
         }
 
-        /* 核心布局：三列网格确保冒号居中 */
+        /* 核心显示区域：三列布局 */
         .display-wrapper {
             display: grid;
-            grid-template-columns: 1fr auto 1fr; /* 分钟、冒号、秒钟 */
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
-            width: 90vw;
+            width: 95vw;
+        }
+
+        /* 单元格容器：用于堆叠底纹和数字 */
+        .cell {
+            display: grid;
+            place-items: center;
             position: relative;
         }
 
-        /* 共享的数字样式 */
-        .digit-group {
+        /* 统一的数字样式 */
+        .digit-style {
+            grid-area: 1 / 1; /* 强制所有内容占同一个网格位置 */
             font-size: 24vw;
             font-weight: 900;
             line-height: 1;
-            letter-spacing: 0.05em;
+            font-variant-numeric: tabular-nums; /* 强制等宽数字 */
+            letter-spacing: 0;
         }
 
-        /* 底纹层 */
-        .ghost-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            color: rgba(255, 255, 255, 0.05); /* 稍微加深一点底纹 */
+        /* 底纹样式 */
+        .ghost {
+            color: rgba(255, 255, 255, 0.06); /* 液晶底纹颜色 */
             z-index: 1;
-            pointer-events: none;
         }
 
-        /* 真实数字层 */
-        .active-layer {
-            position: relative;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
+        /* 真实数字样式 */
+        .active {
+            color: #ffffff;
             z-index: 2;
             text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            transition: color 0.3s ease, text-shadow 0.3s ease;
         }
 
-        .mins-part { text-align: right; }
-        .secs-part { text-align: left; }
-        .colon-part { 
+        .mins-cell { justify-self: end; }
+        .secs-cell { justify-self: start; }
+        .colon-cell { 
             width: 6vw; 
-            text-align: center; 
-            margin-bottom: 2vw; /* 冒号微调 */
+            margin-bottom: 2vw; 
         }
 
         #reset-btn {
@@ -120,8 +117,9 @@
             z-index: 10;
         }
 
-        .warning { color: #facc15 !important; text-shadow: 0 0 30px rgba(250, 204, 21, 0.3) !important; }
-        .danger { color: #ef4444 !important; text-shadow: 0 0 40px rgba(239, 68, 68, 0.4) !important; }
+        /* 状态颜色 */
+        .warning .active { color: #facc15; text-shadow: 0 0 30px rgba(250, 204, 21, 0.3); }
+        .danger .active { color: #ef4444; text-shadow: 0 0 40px rgba(239, 68, 68, 0.4); }
         .dim { opacity: 0.3; }
         
         #status-bar {
@@ -150,18 +148,23 @@
     </div>
 
     <div id="timer-screen" onclick="togglePause()">
-        <div class="display-wrapper">
-            <!-- 底纹层：始终显示 88:88 -->
-            <div class="ghost-layer digit-group">
-                <div class="mins-part">88</div>
-                <div class="colon-part">:</div>
-                <div class="secs-part">88</div>
+        <div class="display-wrapper" id="main-display">
+            <!-- 分钟单元格 -->
+            <div class="cell mins-cell">
+                <div class="digit-style ghost">88</div>
+                <div class="digit-style active" id="mins">00</div>
             </div>
-            <!-- 真实数字层 -->
-            <div class="active-layer digit-group" id="active-display">
-                <div class="mins-part" id="mins">00</div>
-                <div class="colon-part">:</div>
-                <div class="secs-part" id="secs">00</div>
+            
+            <!-- 冒号单元格 -->
+            <div class="cell colon-cell">
+                <div class="digit-style ghost">:</div>
+                <div class="digit-style active">:</div>
+            </div>
+            
+            <!-- 秒钟单元格 -->
+            <div class="cell secs-cell">
+                <div class="digit-style ghost">88</div>
+                <div class="digit-style active" id="secs">00</div>
             </div>
         </div>
         <button id="reset-btn" onclick="event.stopPropagation(); reset()">RESET</button>
@@ -178,7 +181,7 @@
         const timerScreen = document.getElementById('timer-screen');
         const minsDisplay = document.getElementById('mins');
         const secsDisplay = document.getElementById('secs');
-        const activeDisplay = document.getElementById('active-display');
+        const mainDisplay = document.getElementById('main-display');
         const statusBar = document.getElementById('status-bar');
 
         function handleUserInteraction() {
@@ -245,18 +248,17 @@
             const secs = (absTime % 60).toString().padStart(2, '0');
             const sign = timeLeft < 0 ? '-' : '';
             
-            // 分别更新分钟和秒钟
             minsDisplay.innerText = sign + mins;
             secsDisplay.innerText = secs;
             
-            activeDisplay.classList.remove('warning', 'danger');
-            if (timeLeft < 0 || timeLeft <= 10) activeDisplay.classList.add('danger');
-            else if (timeLeft <= 60) activeDisplay.classList.add('warning');
+            mainDisplay.classList.remove('warning', 'danger');
+            if (timeLeft < 0 || timeLeft <= 10) mainDisplay.classList.add('danger');
+            else if (timeLeft <= 60) mainDisplay.classList.add('warning');
         }
 
         function togglePause() {
             isActive = !isActive;
-            activeDisplay.classList.toggle('dim', !isActive);
+            timerScreen.classList.toggle('dim', !isActive);
             if (isActive) requestWakeLock();
             else releaseWakeLock();
         }
