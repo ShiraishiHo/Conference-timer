@@ -53,9 +53,10 @@
             cursor: pointer;
         }
         #display {
-            font-size: 28vw;
+            font-size: 24vw; /* 缩小一点，为负号留出空间 */
             font-weight: bold;
             line-height: 1;
+            transition: color 0.3s ease;
         }
         .warning { color: #eab308; }
         .danger { color: #dc2626; }
@@ -92,7 +93,6 @@
         let timeLeft = 0;
         let timerId = null;
         let isActive = false;
-        let lastBeepedAt = null;
         let audioCtx = null;
 
         const setupScreen = document.getElementById('setup');
@@ -113,9 +113,10 @@
             unlockAudio();
             timeLeft = minutes * 60;
             isActive = true;
-            lastBeepedAt = null;
+            
             setupScreen.style.display = 'none';
             timerScreen.style.display = 'flex';
+            
             updateDisplay();
             if (timerId) clearInterval(timerId);
             timerId = setInterval(tick, 1000);
@@ -123,27 +124,35 @@
 
         function tick() {
             if (!isActive) return;
-            if (timeLeft > 0) {
-                timeLeft--;
-                updateDisplay();
-                // 3分钟响1声，1分钟响2声
-                if (timeLeft === 180 && lastBeepedAt !== 180) { playBell(1); lastBeepedAt = 180; }
-                else if (timeLeft === 60 && lastBeepedAt !== 60) { playBell(2); lastBeepedAt = 60; }
-            } else {
-                clearInterval(timerId);
-                isActive = false;
-                playBell(3); // 结束响3声
-                display.classList.add('dim');
-            }
+            
+            // 每一秒都递减（即使变成负数）
+            timeLeft--;
+            updateDisplay();
+
+            // 提醒铃声逻辑
+            if (timeLeft === 180) { playBell(1); } // 剩3分钟
+            else if (timeLeft === 60) { playBell(2); } // 剩1分钟
+            else if (timeLeft === 0) { playBell(3); }  // 时间到
         }
 
         function updateDisplay() {
-            const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-            const secs = (timeLeft % 60).toString().padStart(2, '0');
-            display.innerText = `${mins}:${secs}`;
+            const absTime = Math.abs(timeLeft);
+            const mins = Math.floor(absTime / 60).toString().padStart(2, '0');
+            const secs = (absTime % 60).toString().padStart(2, '0');
+            
+            // 如果时间小于0，显示负号
+            const sign = timeLeft < 0 ? '-' : '';
+            display.innerText = `${sign}${mins}:${secs}`;
+            
+            // 颜色逻辑
             display.classList.remove('warning', 'danger');
-            if (timeLeft <= 10) display.classList.add('danger');
-            else if (timeLeft <= 60) display.classList.add('warning');
+            if (timeLeft < 0) {
+                display.classList.add('danger'); // 超时始终显示红色
+            } else if (timeLeft <= 10) {
+                display.classList.add('danger'); // 最后10秒红色
+            } else if (timeLeft <= 60) {
+                display.classList.add('warning'); // 最后1分钟黄色
+            }
         }
 
         function togglePause() {
@@ -159,15 +168,12 @@
             timerScreen.style.display = 'none';
         }
 
-        // 模拟会议铃声 (Conference Bell Synthesis)
+        // 会议铃声合成
         function playBell(count) {
             if (!audioCtx) unlockAudio();
             
             function strike(timeOffset) {
                 const now = audioCtx.currentTime + timeOffset;
-                
-                // 铃声由多个不和谐的频率组成
-                // 基频 700Hz + 泛音
                 const frequencies = [700, 1050, 1470, 2100, 2800];
                 const gains = [0.4, 0.2, 0.15, 0.1, 0.05];
                 const decays = [1.5, 1.0, 0.8, 0.5, 0.3];
@@ -175,26 +181,19 @@
                 frequencies.forEach((freq, i) => {
                     const osc = audioCtx.createOscillator();
                     const gainNode = audioCtx.createGain();
-                    
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(freq, now);
-                    
                     gainNode.gain.setValueAtTime(0, now);
-                    // 极快的攻击 (Attack)
                     gainNode.gain.linearRampToValueAtTime(gains[i], now + 0.01);
-                    // 指数级衰减 (Decay)
                     gainNode.gain.exponentialRampToValueAtTime(0.001, now + decays[i]);
-                    
                     osc.connect(gainNode);
                     gainNode.connect(audioCtx.destination);
-                    
                     osc.start(now);
                     osc.stop(now + decays[i] + 0.1);
                 });
             }
 
             for (let i = 0; i < count; i++) {
-                // 每次响铃间隔 0.8 秒，听起来更从容
                 strike(i * 0.8);
             }
         }
