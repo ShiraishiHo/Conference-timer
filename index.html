@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- 引入电子风格字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <title>学术会议倒计时</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -12,7 +14,7 @@
             height: 100%; 
             background-color: #000000; 
             color: #ffffff; 
-            font-family: 'Courier New', Courier, monospace; 
+            font-family: 'Orbitron', sans-serif; /* 全局使用电子风格 */
             overflow: hidden;
             user-select: none;
         }
@@ -40,10 +42,13 @@
             border: none;
             color: white;
             font-size: 60px;
-            font-weight: bold;
+            font-weight: 900;
             cursor: pointer;
             font-family: inherit;
+            transition: transform 0.1s;
         }
+        .btn:active { transform: scale(0.9); }
+
         #timer-screen {
             display: none;
             height: 100%;
@@ -54,42 +59,66 @@
             cursor: pointer;
             position: relative;
         }
-        #display {
-            font-size: 24vw;
-            font-weight: bold;
-            line-height: 1;
-            transition: color 0.3s ease;
-            margin-bottom: 20px;
-        }
-        /* 新增重置按钮样式 */
-        #reset-btn {
-            position: absolute;
-            bottom: 15%;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 12px 40px;
-            border-radius: 30px;
-            font-size: 18px;
-            font-family: inherit;
-            letter-spacing: 2px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        #reset-btn:active {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(0.95);
+
+        /* 计时器容器，用于放置底纹和真实数字 */
+        .display-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .warning { color: #eab308; }
-        .danger { color: #dc2626; }
-        .dim { opacity: 0.4; }
+        /* 液晶屏底纹 (88:88) */
+        .ghost-display {
+            position: absolute;
+            font-size: 24vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.03); /* 极低透明度 */
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #display {
+            font-size: 24vw;
+            font-weight: 900;
+            line-height: 1;
+            z-index: 2;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.2); /* 默认发光 */
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+        }
+
+        #reset-btn {
+            position: absolute;
+            bottom: 12%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 40px;
+            border-radius: 5px; /* 电子表风格通常较硬朗 */
+            font-size: 16px;
+            font-family: inherit;
+            letter-spacing: 4px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        /* 状态颜色：黄色发光 */
+        .warning { 
+            color: #facc15 !important; 
+            text-shadow: 0 0 30px rgba(250, 204, 21, 0.4) !important;
+        }
+        /* 状态颜色：红色发光 */
+        .danger { 
+            color: #ef4444 !important; 
+            text-shadow: 0 0 40px rgba(239, 68, 68, 0.5) !important;
+        }
+        .dim { opacity: 0.3; }
         
         #status-bar {
             position: absolute;
             bottom: 20px;
             font-size: 10px;
-            opacity: 0.2;
+            opacity: 0.15;
             text-transform: uppercase;
             letter-spacing: 2px;
             text-align: center;
@@ -107,12 +136,14 @@
             <button class="btn" onclick="startTimer(15)">15</button>
             <button class="btn" onclick="startTimer(20)">20</button>
         </div>
-        <div id="status-bar">点击数字开始计时</div>
+        <div id="status-bar">READY TO START</div>
     </div>
 
     <div id="timer-screen" onclick="togglePause()">
-        <div id="display">00:00</div>
-        <!-- 显式的重置按钮 -->
+        <div class="display-container">
+            <div class="ghost-display">88:88</div>
+            <div id="display">00:00</div>
+        </div>
         <button id="reset-btn" onclick="event.stopPropagation(); reset()">RESET</button>
     </div>
 
@@ -138,7 +169,7 @@
                 try {
                     if (wakeLock !== null) return;
                     wakeLock = await navigator.wakeLock.request('screen');
-                    statusBar.innerText = "铃声就绪 | 屏幕常亮已开启";
+                    statusBar.innerText = "BELL READY | WAKE LOCK ON";
                     wakeLock.addEventListener('release', () => { wakeLock = null; });
                 } catch (err) { console.error(err); }
             }
@@ -192,6 +223,7 @@
             const secs = (absTime % 60).toString().padStart(2, '0');
             const sign = timeLeft < 0 ? '-' : '';
             display.innerText = `${sign}${mins}:${secs}`;
+            
             display.classList.remove('warning', 'danger');
             if (timeLeft < 0 || timeLeft <= 10) display.classList.add('danger');
             else if (timeLeft <= 60) display.classList.add('warning');
@@ -210,7 +242,7 @@
             releaseWakeLock();
             setupScreen.style.display = 'flex';
             timerScreen.style.display = 'none';
-            statusBar.innerText = "点击数字开始计时";
+            statusBar.innerText = "READY TO START";
         }
 
         function playBell(count) {
