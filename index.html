@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <!-- 引入专业七段码数字字体 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dseg@2.1.0/css/dseg.min.css">
     <title>学术会议倒计时</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -13,16 +14,22 @@
             height: 100%; 
             background-color: #000000; 
             color: #ffffff; 
-            font-family: 'Orbitron', sans-serif;
+            /* 使用 DSEG7 经典斜体风格 */
+            font-family: 'DSEG7-Classic', sans-serif;
+            font-style: italic;
             overflow: hidden;
             user-select: none;
         }
+        
+        /* 设置界面使用系统字体，确保清晰 */
         #setup {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-style: normal;
         }
         .title {
             font-size: 14px;
@@ -41,9 +48,9 @@
             border: none;
             color: white;
             font-size: 60px;
-            font-weight: 900;
+            font-weight: bold;
             cursor: pointer;
-            font-family: inherit;
+            font-family: 'DSEG7-Classic';
         }
 
         #timer-screen {
@@ -61,7 +68,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 100%;
+            gap: 1vw; /* 增加数位间的间距，防止重叠感 */
         }
 
         /* 单个数位方格 */
@@ -69,18 +76,15 @@
             display: grid;
             place-items: center;
             position: relative;
-            width: 14vw; /* 固定宽度确保对齐 */
+            width: 16vw; /* 稍微加宽 */
         }
 
-        /* 冒号方格 */
         .colon-box {
             display: grid;
             place-items: center;
             width: 6vw;
-            margin-bottom: 2vw;
         }
 
-        /* 负号方格 */
         .sign-box {
             display: grid;
             place-items: center;
@@ -90,20 +94,22 @@
         .digit-text {
             grid-area: 1 / 1;
             font-size: 22vw;
-            font-weight: 900;
             line-height: 1;
             text-align: center;
         }
 
+        /* 极淡的液晶底纹 */
         .ghost {
-            color: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.04);
             z-index: 1;
         }
 
+        /* 真实数字 */
         .active {
             color: #ffffff;
             z-index: 2;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            /* 增加轻微的外发光，提升清晰度 */
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
             transition: color 0.3s ease, text-shadow 0.3s ease;
         }
 
@@ -114,17 +120,25 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
             padding: 12px 40px;
-            border-radius: 5px;
+            border-radius: 4px;
             font-size: 16px;
-            font-family: inherit;
+            font-family: -apple-system, sans-serif;
+            font-style: normal;
             letter-spacing: 4px;
             cursor: pointer;
             z-index: 10;
         }
 
-        /* 状态颜色 */
-        .warning .active { color: #facc15; text-shadow: 0 0 30px rgba(250, 204, 21, 0.3); }
-        .danger .active { color: #ef4444; text-shadow: 0 0 40px rgba(239, 68, 68, 0.4); }
+        /* 状态颜色：黄色 */
+        .warning .active { 
+            color: #facc15; 
+            text-shadow: 0 0 25px rgba(250, 204, 21, 0.4); 
+        }
+        /* 状态颜色：红色 */
+        .danger .active { 
+            color: #ef4444; 
+            text-shadow: 0 0 30px rgba(239, 68, 68, 0.5); 
+        }
         .dim { opacity: 0.3; }
         
         #status-bar {
@@ -136,6 +150,8 @@
             letter-spacing: 2px;
             text-align: center;
             width: 100%;
+            font-family: -apple-system, sans-serif;
+            font-style: normal;
         }
     </style>
 </head>
@@ -199,7 +215,6 @@
         const mainDisplay = document.getElementById('main-display');
         const statusBar = document.getElementById('status-bar');
 
-        // 获取所有数位节点
         const elSign = document.getElementById('sign');
         const elM1 = document.getElementById('m1');
         const elM2 = document.getElementById('m2');
@@ -269,10 +284,7 @@
             const mins = Math.floor(absTime / 60).toString().padStart(2, '0');
             const secs = (absTime % 60).toString().padStart(2, '0');
             
-            // 更新负号
             elSign.innerText = timeLeft < 0 ? '-' : '';
-            
-            // 更新每一位数字
             elM1.innerText = mins[0];
             elM2.innerText = mins[1];
             elS1.innerText = secs[0];
