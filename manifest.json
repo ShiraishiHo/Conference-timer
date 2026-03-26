@@ -7,12 +7,7 @@
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "https://images.unsplash.com/photo-1508962914676-134849a727f0?q=80&w=192&h=192&auto=format&fit=crop",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "https://images.unsplash.com/photo-1508962914676-134849a727f0?q=80&w=512&h=512&auto=format&fit=crop",
+      "src": "https://img.icons8.com/ios-filled/512/FFFFFF/stopwatch.png?v=3",
       "sizes": "512x512",
       "type": "image/png"
     }
