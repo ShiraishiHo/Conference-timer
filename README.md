@@ -1,6 +1,6 @@
 # Minimalist Conference Timer
 
-A professional, high-contrast timer designed specifically for iPad, perfect for academic conferences, presentations, and workshops.
+A professional, high-contrast timer designed specifically for iPad/iPhone, perfect for academic conferences, presentations, and workshops.
 
 ## ✨ Key Features
 
