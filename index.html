@@ -117,8 +117,25 @@
         const elM2 = document.getElementById('m2');
         const elS1 = document.getElementById('s1');
         const elS2 = document.getElementById('s2');
+        function playClick() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.1);
+            if (navigator.vibrate) navigator.vibrate(10);
+        }
 
         function adjTime(delta) {
+            playClick();
             setupTime += delta;
             if (setupTime < 1) setupTime = 1;
             if (setupTime > 5999) setupTime = 5999;
@@ -126,6 +143,7 @@
         }
 
         function setPreset(mins) {
+            playClick();
             setupTime = mins * 60;
             updateSetupDisplay();
         }
@@ -165,6 +183,7 @@
         }
 
         function startTimer() {
+            playClick();
             isActive = true;
             timeLeft = setupTime;
             setupScreen.style.display = 'none';
@@ -199,6 +218,7 @@
         }
 
         function togglePause() {
+            playClick();
             isActive = !isActive;
             timerScreen.classList.toggle('dim', !isActive);
             if (isActive) requestWakeLock();
@@ -206,6 +226,7 @@
         }
 
         function reset() {
+            playClick();
             clearInterval(timerId);
             isActive = false;
             releaseWakeLock();
