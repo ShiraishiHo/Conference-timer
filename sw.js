@@ -1,12 +1,10 @@
-const CACHE_NAME = 'academic-timer-v3';
+const CACHE_NAME = 'academic-timer-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './manifest.json',
+  './manifest.json?v=2',
   'https://fonts.cdnfonts.com/css/digital-7-mono',
-  'https://images.unsplash.com/photo-1508962914676-134849a727f0?q=80&w=180&h=180&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1508962914676-134849a727f0?q=80&w=192&h=192&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1508962914676-134849a727f0?q=80&w=512&h=512&auto=format&fit=crop'
+  'https://img.icons8.com/ios-filled/512/FFFFFF/stopwatch.png?v=3'
 ];
 
 // 安装阶段：将文件存入缓存
