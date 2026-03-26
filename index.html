@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link href="https://fonts.cdnfonts.com/css/digital-7-mono" rel="stylesheet">
-    <title>学术会议倒计时</title>
+    <title>Academic Timer</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { 
@@ -254,6 +255,7 @@
 
         // 手动调整时间逻辑
         function adjTime(delta) {
+            if (window.navigator.vibrate) window.navigator.vibrate(10); // 短震动
             setupTime += delta;
             if (setupTime < 1) setupTime = 1; // 最小1秒
             if (setupTime > 5999) setupTime = 5999; // 最大99:59
@@ -263,6 +265,14 @@
         function setPreset(mins) {
             setupTime = mins * 60;
             updateSetupDisplay();
+        }
+        // 注册 Service Worker 以支持离线使用
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('离线缓存已就绪'))
+                    .catch(err => console.log('注册失败', err));
+            });
         }
 
         function updateSetupDisplay() {
