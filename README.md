@@ -1,14 +1,15 @@
 # Minimalist Conference Timer
 
-A professional, high-contrast timer designed specifically for iPad/iPhone, perfect for academic conferences, presentations, and workshops.
+A professional, high-contrast timer designed specifically for iPad, perfect for academic conferences, presentations, and workshops.
 
 ## ✨ Key Features
 
 - **Minimalist Visual Design**: Pure black background with extra-large typography ensures the speaker can see the remaining time clearly from a distance.
-- **Smart Chime Alerts**:
-  - **3 Minutes Remaining**: 1 chime (Early warning).
-  - **1 Minute Remaining**: 2 chimes (Final warning).
-  - **Time's Up (00:00)**: 3 chimes (Session end).
+- **Customizable Chime Alerts**:
+  - **Chime 1**: 1 chime (Default: 3 minutes remaining).
+  - **Chime 2**: 2 chimes (Default: 1 minute remaining).
+  - **Chime 3**: 3 chimes (Default: 0 minutes remaining).
+  - **Manual Adjustment**: All chime trigger points can be manually adjusted in the setup screen.
 - **Dynamic Color Warnings**:
   - **Normal State**: White text.
   - **1 Minute Remaining**: Text turns **Yellow**.
